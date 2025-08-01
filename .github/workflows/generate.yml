@@ -20,12 +20,6 @@ jobs:
             exit 1
           fi
 
-      - name: Download and extract pre-compiled binary
-        run: |
-          curl -sL https://github.com/${{ github.repository }}/releases/latest/download/vain-linux-amd64.tar.gz -o vain.tar.gz
-          tar -xzvf vain.tar.gz
-          chmod +x ./vain
-      
       - name: Install Runtime Dependencies
         run: |
           sudo apt-get update
@@ -38,6 +32,12 @@ jobs:
             libssl1.1 \
             zlib1g
 
+      - name: Download and extract pre-compiled binary
+        run: |
+          curl -sL https://github.com/${{ github.repository }}/releases/latest/download/vain-linux-amd64.tar.gz -o vain.tar.gz
+          tar -xzvf vain.tar.gz
+          chmod +x ./vain
+        
       - name: Generate Vanity Address
         run: ./vain ${{ github.event.inputs.prefix }} --output ./private.dat
 

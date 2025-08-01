@@ -1,32 +1,46 @@
-# 使用一个包含交叉编译工具的镜像
 FROM --platform=$BUILDPLATFORM debian:bullseye AS builder
 
-# 安装编译依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    build-essential \
-    libboost-system-dev \
-    libboost-program-options-dev \
-    libboost-filesystem-dev \
-    libboost-date-time-dev \
-    libboost-chrono-dev \
-    libssl-dev \
-    zlib1g-dev \
-    ca-certificates \
-    crossbuild-essential-arm64
+ARG TARGETPLATFORM
 
-# 定义工作目录并克隆代码
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git \
+        build-essential \
+        crossbuild-essential-arm64 \
+        ca-certificates && \
+    case ${TARGETPLATFORM} in \
+         "linux/arm64") \
+            apt-get install -y --no-install-recommends \
+                libboost-system-dev:arm64 \
+                libboost-program-options-dev:arm64 \
+                libboost-filesystem-dev:arm64 \
+                libboost-date-time-dev:arm64 \
+                libboost-chrono-dev:arm64 \
+                libssl-dev:arm64 \
+                zlib1g-dev:arm64 ;; \
+         *) \
+            apt-get install -y --no-install-recommends \
+                libboost-system-dev \
+                libboost-program-options-dev \
+                libboost-filesystem-dev \
+                libboost-date-time-dev \
+                libboost-chrono-dev \
+                libssl-dev \
+                zlib1g-dev ;; \
+    esac
+
 WORKDIR /app
 RUN git clone --recursive https://github.com/purplei2p/i2pd-tools .
 
-# 设置目标平台并编译
-ARG TARGETPLATFORM
 RUN case ${TARGETPLATFORM} in \
-         "linux/arm64") CXX_FLAGS="-DCROSS_COMPILE" CXX="aarch64-linux-gnu-g++" ;; \
-         *) CXX_FLAGS="" CXX="g++" ;; \
+         "linux/arm64") \
+            export CXX="aarch64-linux-gnu-g++" && \
+            export CXXFLAGS="-I/usr/include/aarch64-linux-gnu" && \
+            export LDFLAGS="-L/usr/lib/aarch64-linux-gnu" ;; \
+         *) \
+            export CXX="g++" ;; \
     esac && \
-    make CXX=${CXX} CXX_FLAGS=${CXX_FLAGS}
+    make
 
-# 一个空的最终阶段，只是为了方便从中提取文件
 FROM scratch
 COPY --from=builder /app/vain /

@@ -1,4 +1,4 @@
-name: Build and Release Binaries
+name: Build and Release AMD64 Binary
 
 on:
   push:
@@ -15,37 +15,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build for linux/amd64
         run: |
           docker buildx build \
-            --target release-amd64 \
             -f Dockerfile.build \
-            -o ./dist/linux-amd64 \
-            .
-
-      - name: Build for linux/arm64
-        run: |
-          docker buildx build \
-            --platform linux/arm64 \
-            --target release-arm64 \
-            -f Dockerfile.build \
-            -o ./dist/linux-arm64 \
+            -o ./dist \
             .
       
-      - name: Package binaries
+      - name: Package binary
         run: |
-          cd ./dist/linux-amd64 && tar -czvf ../vain-linux-amd64.tar.gz vain && cd ../..
-          cd ./dist/linux-arm64 && tar -czvf ../vain-linux-arm64.tar.gz vain && cd ../..
+          cd ./dist && tar -czvf ../vain-linux-amd64.tar.gz vain
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ./dist/vain-linux-amd64.tar.gz
-            ./dist/vain-linux-arm64.tar.gz
+          files: ./vain-linux-amd64.tar.gz

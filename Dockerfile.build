@@ -1,12 +1,7 @@
-#--- Base Stage ---
-FROM debian:bullseye as base
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates
-WORKDIR /app
-RUN git clone --recursive https://github.com/purplei2p/i2pd-tools .
+FROM debian:bullseye AS builder
 
-#--- AMD64 Build Stage ---
-FROM base as build-amd64
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
     build-essential \
     libboost-system-dev \
     libboost-program-options-dev \
@@ -14,25 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libboost-date-time-dev \
     libboost-chrono-dev \
     libssl-dev \
-    zlib1g-dev
+    zlib1g-dev \
+    ca-certificates
+
+WORKDIR /app
+RUN git clone --recursive https://github.com/purplei2p/i2pd-tools .
+
 RUN make
 
-#--- ARM64 Build Stage ---
-FROM base as build-arm64
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    crossbuild-essential-arm64 \
-    libboost-system-dev:arm64 \
-    libboost-program-options-dev:arm64 \
-    libboost-filesystem-dev:arm64 \
-    libboost-date-time-dev:arm64 \
-    libboost-chrono-dev:arm64 \
-    libssl-dev:arm64 \
-    zlib1g-dev:arm64
-RUN CXX=aarch64-linux-gnu-g++ LDFLAGS=-L/usr/lib/aarch64-linux-gnu CXXFLAGS=-I/usr/include/aarch64-linux-gnu make
-
-#--- Release Stage ---
-FROM scratch AS release-amd64
-COPY --from=build-amd64 /app/vain /
-
-FROM scratch AS release-arm64
-COPY --from=build-arm64 /app/vain /
+FROM scratch
+COPY --from=builder /app/vain /

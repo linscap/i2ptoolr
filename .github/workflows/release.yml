@@ -9,13 +9,13 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 需要权限来创建Release
+      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU for multi-platform builds
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -24,7 +24,7 @@ jobs:
       - name: Build for linux/amd64
         run: |
           docker buildx build \
-            --platform linux/amd64 \
+            --target release-amd64 \
             -f Dockerfile.build \
             -o ./dist/linux-amd64 \
             .
@@ -33,6 +33,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/arm64 \
+            --target release-arm64 \
             -f Dockerfile.build \
             -o ./dist/linux-arm64 \
             .
